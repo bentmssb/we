@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>可爱便签持续生成效果</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #fff5f8;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-image: linear-gradient(to bottom, #ffe6f0, #fff5f8);
+      touch-action: none;
+    }
+    
+    #container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    .note {
+      position: absolute;
+      border-radius: 12px;
+      box-shadow: 3px 3px 15px rgba(255, 150, 180, 0.4);
+      cursor: move;
+      opacity: 0;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      width: 150px;
+      height: 120px;
+      background-color: #fff0f5;
+      padding: 25px 10px 10px 10px;
+      animation: float 6s ease-in-out infinite;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(1deg); }
+    }
+    
+    /* 窗口顶部栏 */
+    .note-header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 25px;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+      background-color: #ffcce0;
+      display: flex;
+      align-items: center;
+      padding-left: 12px;
+    }
+    
+    /* 三个小圆点 */
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 6px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+    
+    .dot-red {
+      background-color: #ff5a5a;
+    }
+    
+    .dot-yellow {
+      background-color: #ffd87d;
+    }
+    
+    .dot-green {
+      background-color: #7dff7d;
+    }
+    
+    .note-content {
+      color: #b33082;
+      font-size: 14px;
+      line-height: 1.4;
+      padding: 0 8px;
+      text-shadow: 1px 1px 2px rgba(255, 200, 220, 0.5);
+    }
+    
+    /* 添加一些可爱的装饰元素 */
+    .note::before {
+      content: "";
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 25px;
+      height: 25px;
+      background-color: #ffcce0;
+      border-radius: 50%;
+      opacity: 0.7;
+      z-index: -1;
+    }
+    
+    .note::after {
+      content: "";
+      position: absolute;
+      bottom: -8px;
+      left: -8px;
+      width: 20px;
+      height: 20px;
+      background-color: #ffcce0;
+      border-radius: 50%;
+      opacity: 0.7;
+      z-index: -1;
+    }
+    
+    .instructions {
+      position: absolute;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: #ff66a3;
+      font-size: 14px;
+      padding: 0 20px;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+  <div class="instructions">拖动便签可以移动位置~</div>
+
+  <script>
+    const container = document.getElementById('container');
+    
+    // 可爱风格的便签文字（含颜文字和对小兴的表白）
+    const noteTexts = [
+      "我好喜欢你，小兴~♡", 
+      "记得按时吃饭哦~(๑•̀ㅂ•́)و✧", 
+      "今天也要加油鸭！",
+      "你笑起来真好看，小兴~♪(^∇^*)", 
+      "期待下次见面！ ♪(^∇^*)", 
+      "别熬夜啦~早睡变漂亮！", 
+      "想你了哦，小兴~(✧∇✧)",
+      "要好好吃饭哦~٩(˃̶͈̀௰˂̶͈́)و", 
+      "你是我见过最可爱的女孩！",
+      "你是我生命中的阳光！(●'◡'●)",
+      "今天也要元气满满！(ง •_•)ง",
+      "和你在一起的每一天都很幸福！",
+      "一切都会好起来的~♡",
+      "累了就休息一下哦~",
+      "保持微笑，好运自然来~",
+      "每天都要进步一点点！",
+      "你值得所有的美好~",
+      "记得多喝水哦~",
+      "今天的你也很努力呢！",
+      "你的眼睛像星星一样闪亮✨",
+      "和你在一起的时间总是过得特别快",
+      "你是我最珍贵的宝贝，小兴",
+      "有你真好，永远爱你❤️",
+      "你的笑容是我最大的动力",
+      "我会一直陪在你身边，小兴",
+      "你是我心中的唯一",
+      "每一天都因你而特别",
+      "你是我最美的遇见",
+      "想和你一起看遍世界风景",
+      "我的心里全是你呀~♡(◕‿◕)♡",
+      "你就是我的全世界！(♥‿♥)",
+      "爱你到永远，小兴宝贝~❤️",
+      "你让我的世界变得完整✨",
+      "每一天都更爱你一点~(●'◡'●)",
+      "要记得照顾好自己哦~🍎",
+      "累了就来我怀里休息吧~(づ｡◕‿‿◕｡)づ",
+      "天气变化记得添衣服~👕",
+      "工作再忙也要休息眼睛哦~👀",
+      "你的健康是我最关心的事~💪",
+      "想吃什么我都陪你~🍜",
+      "你是最棒的！加油！٩(◕‿◕)۶",
+      "相信自己，你可以的！✨",
+      "今天的你也超级优秀！🌟",
+      "每一步进步都值得骄傲~🎯",
+      "你的努力我都看在眼里~👏",
+      "想和你一起吃好多好多顿饭~🍽️",
+      "你的笑容是我的充电宝~🔋",
+      "抱着你的感觉最温暖~🤗",
+      "和你在一起的每刻都是纪念日~🎉",
+      "你的小脾气我也觉得可爱~😊",
+      "我们一起慢慢变老吧~👵👴",
+      "想和你看遍四季风景~🌸🍁❄️",
+      "我们的未来一定很美好~🏡",
+      "想带你去所有你想去的地方~🌍",
+      "下辈子也要找到你~💕"
+    ];
+
+    // 便签颜色数组
+    const noteColors = [
+      { bg: "#fff0f5", header: "#ffcce0" }, // 粉色
+      { bg: "#f0fff0", header: "#ccffcc" }, // 浅绿色
+      { bg: "#f0f8ff", header: "#cce0ff" }, // 浅蓝色
+      { bg: "#fff8f0", header: "#ffebcc" }  // 浅橙色
+    ];
+
+    // 生成一个便签
+    function createNote() {
+      const note = document.createElement('div');
+      note.className = 'note';
+      
+      // 随机选择颜色
+      const color = noteColors[Math.floor(Math.random() * noteColors.length)];
+      note.style.backgroundColor = color.bg;
+      
+      // 创建窗口顶部栏和三个小圆点
+      const noteHeader = document.createElement('div');
+      noteHeader.className = 'note-header';
+      noteHeader.style.backgroundColor = color.header;
+      
+      const dotRed = document.createElement('div');
+      dotRed.className = 'dot dot-red';
+      
+      const dotYellow = document.createElement('div');
+      dotYellow.className = 'dot dot-yellow';
+      
+      const dotGreen = document.createElement('div');
+      dotGreen.className = 'dot dot-green';
+      
+      noteHeader.appendChild(dotRed);
+      noteHeader.appendChild(dotYellow);
+      noteHeader.appendChild(dotGreen);
+      
+      // 创建便签内容
+      const noteContent = document.createElement('div');
+      noteContent.className = 'note-content';
+      noteContent.textContent = noteTexts[Math.floor(Math.random() * noteTexts.length)];
+      
+      note.appendChild(noteHeader);
+      note.appendChild(noteContent);
+      
+      // 随机位置，确保便签完全在视窗内
+      note.style.left = `${Math.random() * (window.innerWidth - 150)}px`;
+      note.style.top = `${Math.random() * (window.innerHeight - 120)}px`;
+      
+      // 随机旋转角度，增加趣味性
+      note.style.transform = `rotate(${Math.random() * 10 - 5}deg)`;
+
+      // 淡入效果
+      setTimeout(() => {
+        note.style.opacity = 1;
+      }, 50);
+
+      // 拖动功能 - 同时支持鼠标和触摸
+      let isDragging = false;
+      let offsetX, offsetY;
+      
+      // 鼠标事件
+      note.addEventListener('mousedown', startDrag);
+      note.addEventListener('touchstart', startDrag, { passive: false });
+      
+      function startDrag(e) {
+        isDragging = true;
+        
+        // 获取触摸或鼠标位置
+        const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        
+        offsetX = clientX - note.getBoundingClientRect().left;
+        offsetY = clientY - note.getBoundingClientRect().top;
+        
+        note.style.zIndex = 999;
+        note.style.transform = `rotate(0deg)`; // 拖动时摆正便签
+        note.style.animation = 'none'; // 拖动时停止浮动动画
+        
+        // 阻止默认行为，防止触摸时页面滚动
+        if (e.type.includes('touch')) {
+          e.preventDefault();
+        }
+      }
+      
+      // 移动事件
+      document.addEventListener('mousemove', drag);
+      document.addEventListener('touchmove', drag, { passive: false });
+      
+      function drag(e) {
+        if (!isDragging) return;
+        
+        // 获取触摸或鼠标位置
+        const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        
+        note.style.left = `${clientX - offsetX}px`;
+        note.style.top = `${clientY - offsetY}px`;
+        
+        // 阻止默认行为，防止触摸时页面滚动
+        if (e.type.includes('touch')) {
+          e.preventDefault();
+        }
+      }
+      
+      // 结束拖动
+      document.addEventListener('mouseup', endDrag);
+      document.addEventListener('touchend', endDrag);
+      
+      function endDrag() {
+        if (!isDragging) return;
+        isDragging = false;
+        note.style.zIndex = 1;
+        // 停止拖动后恢复随机旋转和浮动动画
+        note.style.transform = `rotate(${Math.random() * 10 - 5}deg)`;
+        note.style.animation = 'float 6s ease-in-out infinite';
+      }
+
+      container.appendChild(note);
+      
+      // 随机移除一些便签，防止页面过于拥挤
+      if (container.children.length > 20) {
+        const randomIndex = Math.floor(Math.random() * container.children.length);
+        if (container.children[randomIndex]) {
+          container.removeChild(container.children[randomIndex]);
+        }
+      }
+    }
+
+    // 初始创建一些便签
+    for (let i = 0; i < 6; i++) {
+      setTimeout(() => {
+        createNote();
+      }, i * 200);
+    }
+
+    // 持续生成可爱便签 - 每500毫秒生成一个新便签
+    setInterval(() => {
+      createNote();
+    }, 500);
+  </script>
+</body>
+</html>
